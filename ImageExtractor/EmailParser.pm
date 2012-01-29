@@ -13,14 +13,9 @@ our sub get_information {
     my $id     = $parsed_content->header('Message-ID');
     my %images;
 
-    if($from =~ /\<(.+)\>/){
-        $from = $1;
-    }
-
-    if($id =~ /\<(.+?)\>/){
-        $id = $1;
-    }
-
+    $from = $1 if($from =~ /\<(.+)\>/);
+    $id   = $1 if($id =~ /\<(.+?)\>/);
+    
     $parsed_content->walk_parts(sub {
             my ($part) = @_;
             if($part->content_type =~ /^image\//){
