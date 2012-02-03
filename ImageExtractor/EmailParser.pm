@@ -2,8 +2,8 @@ package ImageExtractor::EmailParser;
 
 use Email::MIME;
 
-#param1 - email content
-#returns from, message-id and parts of the email
+# param1 - email content
+# returns from, message-id and parts of the email
 our sub get_information {
     my ($email_content) = @_;
     my $parsed_content = Email::MIME->new($email_content);
