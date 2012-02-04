@@ -22,17 +22,17 @@ my $save_file_format;
 sub load {
     my $class = shift;
     
-    #set up configuration
+    # set up configuration
     if($Config{'osname'} =~ /^\s*mswin/i){
         $config_path = "config.ini";
     } else {
         $config_path = "/usr/local/etc/imgstore.conf";
     }
 
-    #open config file or bye bye!
+    # open config file or bye bye!
     open(CONFIG, $config_path) or die("Could not find configuration file $config_path");
 
-    #count lines for more specific error reporting
+    # count lines for more specific error reporting
     $line_num = 1;
     while(<CONFIG>){
         if($_ =~ /^\s*(.+?)\s*\=\s*(.+?)\s*$/){
@@ -47,7 +47,7 @@ sub load {
         ++$line_num;
     }
 
-    #create destination directory if it does not exist
+    # create destination directory if it does not exist
     unless(-d $conf{'dest_dir'}){
         print "Destination directory '$conf{'dest_dir'}' does not exists, creating it...";
         mkdir $conf{'dest_dir'} or die;

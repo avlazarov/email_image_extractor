@@ -1,8 +1,7 @@
 package ImageExtractor::Server;
 
-use ImageExtractor::EmailParser;
+use ImageExtractor::Extractor;
 use ImageExtractor::Config;
-use Image::Magick;
 use HTTP::Server::Simple::CGI;
 
 use base qw(HTTP::Server::Simple::CGI);
@@ -13,6 +12,7 @@ $CGI::POST_MAX = 5000000;
 my %dispatch = (
     '/home'   => \&resp_home,
     '/upload' => \&resp_upload,
+    'default' => \&resp_home,
 );
 
 # handles each request
@@ -28,11 +28,9 @@ sub handle_request {
         $handler->($cgi);
          
     } else {
-        print "HTTP/1.0 404 Not found\r\n";
-        print $cgi->header,
-              $cgi->start_html('Not found'),
-              $cgi->h1('Not found'),
-              $cgi->end_html;
+        $handler = $dispatch{'default'};
+        print "HTTP/1.0 200 OK\r\n";
+        $handler->($cgi);
     }
 }
  
@@ -42,35 +40,33 @@ sub resp_upload {
     return if !ref $cgi;
 
     # uploaded email filename and file handler
-    my $filename_          = $cgi->param('email_file');
-    my $upload_filehandle  = $cgi->upload('email_file');
+    my $email_filename    = $cgi->param('email_file');
+    my $upload_filehandle = $cgi->upload('email_file');
+
+    # check if a file has been submitted
+    if(!$email_filename){
+        print $cgi->header,
+              $cgi->start_html("File not found"),
+              $cgi->h1("No file uploaded!"),
+              $cgi->end_html;
+        return;
+    }
 
     # load config
     my $config = ImageExtractor::Config->load();
     my $save_file_format = $config->get_save_file_format();
 
     #get whole email content as a string
-    $message = '';
+    my $message = '';
     while (<$upload_filehandle>){
         $message .= $_;
     }
 
-    #get needed information
-    my ($from, $id, %binary_images) = ImageExtractor::EmailParser::get_information($message);
-
-    #prefix of the file names
-    my $prefix = $from."_".$id."_";
-    
-    #iterate each image
-    while (($filename, $image) = each(%binary_images)){ 
-        $im = Image::Magick->new();
-        $im->BlobToImage($image);#read image data and add it to $im object
-        $im->Write(sprintf($save_file_format, $prefix.$filename));
-    }
+    ImageExtractor::Extractor::convert($message, $save_file_format);
 
     print $cgi->header,
           $cgi->start_html("Upload"),
-          $cgi->h1("File $filename_ successfully uploaded!"),
+          $cgi->h1("File $email_filename successfully uploaded!"),
           $cgi->end_html;
 
 }
